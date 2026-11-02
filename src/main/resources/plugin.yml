@@ -1,0 +1,16 @@
+name: OldDropItems
+version: ${project.version}
+main: ru.public4nt.olddrop.OldDropPlugin
+api-version: '1.21'
+author: OldDropItems
+description: Плагин для контролирования дропа
+folia-supported: true
+commands:
+  olddrop:
+    description: Перезагрузка конфига
+    usage: /olddrop reload
+    permission: olddrop.reload
+permissions:
+  olddrop.reload:
+    description: Право для перезагрузки конфига
+    default: op
