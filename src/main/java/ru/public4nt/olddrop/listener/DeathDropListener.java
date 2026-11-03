@@ -32,9 +32,7 @@ public class DeathDropListener implements Listener {
             return;
         }
 
-        Player player = event.getEntity();
         List<ItemStack> drops = event.getDrops();
-
         if (drops == null || drops.isEmpty()) {
             return;
         }
@@ -42,9 +40,11 @@ public class DeathDropListener implements Listener {
         List<ItemStack> snapshot = new ArrayList<>(drops);
         drops.clear();
 
-        Location deathLoc = player.getLocation();
-        double scatter = config.getScatter();
-        double throwHeight = config.getThrowHeight();
+        Player player = event.getEntity();
+        Location deathLocation = player.getLocation();
+
+        double scatter = config.getScatter() * SCATTER_TO_VELOCITY;
+        double throwHeight = config.getThrowHeight() * THROW_TO_VELOCITY;
         int pickupDelay = config.getPickupDelay();
 
         for (ItemStack stack : snapshot) {
@@ -52,16 +52,14 @@ public class DeathDropListener implements Listener {
                 continue;
             }
 
-            Item item = player.getWorld().dropItem(deathLoc, stack);
+            Item item = player.getWorld().dropItem(deathLocation, stack);
 
             double angle = ThreadLocalRandom.current().nextDouble() * 2.0 * Math.PI;
-            double horizontalForce = scatter * SCATTER_TO_VELOCITY;
-            double vx = Math.cos(angle) * horizontalForce;
-            double vz = Math.sin(angle) * horizontalForce;
-
-            double vy = throwHeight * THROW_TO_VELOCITY;
-
-            item.setVelocity(new Vector(vx, vy, vz));
+            item.setVelocity(new Vector(
+                    Math.cos(angle) * scatter,
+                    throwHeight,
+                    Math.sin(angle) * scatter
+            ));
             item.setPickupDelay(pickupDelay);
         }
     }

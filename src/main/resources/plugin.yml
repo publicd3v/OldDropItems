@@ -1,7 +1,7 @@
 name: OldDropItems
 version: ${project.version}
 main: ru.public4nt.olddrop.OldDropPlugin
-api-version: '1.21'
+api-version: '1.20'
 author: OldDropItems
 description: Плагин для контролирования дропа
 folia-supported: true

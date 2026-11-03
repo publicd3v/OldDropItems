@@ -2,22 +2,10 @@ package ru.public4nt.olddrop.config;
 
 import ru.public4nt.olddrop.OldDropPlugin;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
-
-import java.io.File;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 
 public class ConfigManager {
 
-    private static final double SCATTER_MIN = 0.0;
-    private static final double SCATTER_MAX = 1.0;
-    private static final double THROW_MIN = 0.0;
-    private static final double THROW_MAX = 2.0;
-
     private final OldDropPlugin plugin;
-    private FileConfiguration config;
 
     private boolean enabled;
     private double scatter;
@@ -29,31 +17,13 @@ public class ConfigManager {
     }
 
     public void load() {
-        if (!plugin.getDataFolder().exists()) {
-            plugin.getDataFolder().mkdirs();
-        }
+        plugin.saveDefaultConfig();
+        plugin.reloadConfig();
 
-        File configFile = new File(plugin.getDataFolder(), "config.yml");
-
-        if (!configFile.exists()) {
-            plugin.saveResource("config.yml", true);
-        }
-
-        config = YamlConfiguration.loadConfiguration(configFile);
-
-        InputStream defaultsStream = plugin.getResource("config.yml");
-        if (defaultsStream != null) {
-            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(new InputStreamReader(defaultsStream, StandardCharsets.UTF_8));
-            config.setDefaults(defaults);
-        }
-
-        cacheValues();
-    }
-
-    private void cacheValues() {
+        FileConfiguration config = plugin.getConfig();
         enabled = config.getBoolean("enabled", true);
-        scatter = clamp(config.getDouble("scatter", 0.3), SCATTER_MIN, SCATTER_MAX);
-        throwHeight = clamp(config.getDouble("throw-height", 0.5), THROW_MIN, THROW_MAX);
+        scatter = clamp(config.getDouble("scatter", 0.3), 0.0, 1.0);
+        throwHeight = clamp(config.getDouble("throw-height", 0.5), 0.0, 2.0);
         pickupDelay = Math.max(0, config.getInt("pickup-delay", 5));
     }
 

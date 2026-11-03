@@ -6,7 +6,7 @@
 
     <groupId>ru.public4nt</groupId>
     <artifactId>OldDropItems</artifactId>
-    <version>0.1</version>
+    <version>0.1.1</version>
 
     <name>OldDropItems</name>
     <description>Контролируемый дроп предметов при смерти</description>
@@ -14,7 +14,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>21</maven.compiler.release>
-        <paper.version>1.21.8-R0.1-SNAPSHOT</paper.version>
+        <paper.version>1.20-R0.1-SNAPSHOT</paper.version>
     </properties>
 
     <repositories>
