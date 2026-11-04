@@ -1,12 +1,12 @@
 package ru.public4nt.olddrop;
 
+import org.bukkit.command.PluginCommand;
+import org.bukkit.plugin.java.JavaPlugin;
 import ru.public4nt.olddrop.command.ReloadCommand;
 import ru.public4nt.olddrop.config.ConfigManager;
 import ru.public4nt.olddrop.listener.DeathDropListener;
-import org.bukkit.command.PluginCommand;
-import org.bukkit.plugin.java.JavaPlugin;
 
-public class OldDropPlugin extends JavaPlugin {
+public final class OldDropPlugin extends JavaPlugin {
 
     private ConfigManager configManager;
 
@@ -15,17 +15,19 @@ public class OldDropPlugin extends JavaPlugin {
         configManager = new ConfigManager(this);
         configManager.load();
 
-        getServer().getPluginManager().registerEvents(new DeathDropListener(configManager), this);
+        getServer().getPluginManager().registerEvents(
+                new DeathDropListener(configManager, getLogger()),
+                this
+        );
 
         PluginCommand command = getCommand("olddrop");
-        if (command == null) {
-            getLogger().severe("Команда olddrop не найдена в plugin.yml, плагин выключается");
-            getServer().getPluginManager().disablePlugin(this);
-            return;
+        if (command != null) {
+            command.setExecutor(new ReloadCommand(this));
+        } else {
+            getLogger().warning("Команда olddrop не зарегистрирована в plugin.yml — /olddrop недоступна.");
         }
-        command.setExecutor(new ReloadCommand(this));
 
-        getLogger().info("OldDropItems включён (версия " + getDescription().getVersion() + ")");
+        getLogger().info("OldDropItems включён (v" + getDescription().getVersion() + ").");
     }
 
     @Override

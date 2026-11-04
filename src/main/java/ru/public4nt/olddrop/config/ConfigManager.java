@@ -1,18 +1,23 @@
 package ru.public4nt.olddrop.config;
 
-import ru.public4nt.olddrop.OldDropPlugin;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.plugin.java.JavaPlugin;
 
-public class ConfigManager {
+public final class ConfigManager {
 
-    private final OldDropPlugin plugin;
+    private static final int MAX_PICKUP_DELAY = 200;
 
-    private boolean enabled;
-    private double scatter;
-    private double throwHeight;
-    private int pickupDelay;
+    public record Settings(boolean enabled,
+                           double scatter,
+                           double throwHeight,
+                           int pickupDelay) {
+    }
 
-    public ConfigManager(OldDropPlugin plugin) {
+    private final JavaPlugin plugin;
+
+    private volatile Settings settings = new Settings(true, 0.3D, 0.5D, 5);
+
+    public ConfigManager(JavaPlugin plugin) {
         this.plugin = plugin;
     }
 
@@ -20,34 +25,27 @@ public class ConfigManager {
         plugin.saveDefaultConfig();
         plugin.reloadConfig();
 
-        FileConfiguration config = plugin.getConfig();
-        enabled = config.getBoolean("enabled", true);
-        scatter = clamp(config.getDouble("scatter", 0.3), 0.0, 1.0);
-        throwHeight = clamp(config.getDouble("throw-height", 0.5), 0.0, 2.0);
-        pickupDelay = Math.max(0, config.getInt("pickup-delay", 5));
+        FileConfiguration cfg = plugin.getConfig();
+
+        boolean enabled = cfg.getBoolean("enabled", true);
+        double scatter = clamp(cfg.getDouble("scatter", 0.3D), 0.0D, 1.0D);
+        double throwHeight = clamp(cfg.getDouble("throw-height", 0.5D), 0.0D, 2.0D);
+        int pickupDelay = (int) clamp(cfg.getInt("pickup-delay", 5), 0.0D, MAX_PICKUP_DELAY);
+
+        settings = new Settings(enabled, scatter, throwHeight, pickupDelay);
     }
 
     private static double clamp(double value, double min, double max) {
-        return Math.max(min, Math.min(max, value));
+        if (Double.isNaN(value) || value < min) {
+            return min;
+        }
+        if (value > max) {
+            return max;
+        }
+        return value;
     }
 
-    public void reload() {
-        load();
-    }
-
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public double getScatter() {
-        return scatter;
-    }
-
-    public double getThrowHeight() {
-        return throwHeight;
-    }
-
-    public int getPickupDelay() {
-        return pickupDelay;
+    public Settings settings() {
+        return settings;
     }
 }

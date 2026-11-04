@@ -1,7 +1,7 @@
 package ru.public4nt.olddrop.listener;
 
-import ru.public4nt.olddrop.config.ConfigManager;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -10,57 +10,81 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
+import ru.public4nt.olddrop.config.ConfigManager;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-public class DeathDropListener implements Listener {
+public final class DeathDropListener implements Listener {
 
-    private static final double SCATTER_TO_VELOCITY = 0.5;
-    private static final double THROW_TO_VELOCITY = 0.4;
+    private final ConfigManager configManager;
+    private final Logger logger;
 
-    private final ConfigManager config;
-
-    public DeathDropListener(ConfigManager config) {
-        this.config = config;
+    public DeathDropListener(ConfigManager configManager, Logger logger) {
+        this.configManager = configManager;
+        this.logger = logger;
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerDeath(PlayerDeathEvent event) {
-        if (!config.isEnabled()) {
+        ConfigManager.Settings settings = configManager.settings();
+        if (!settings.enabled()) {
             return;
         }
 
         List<ItemStack> drops = event.getDrops();
-        if (drops == null || drops.isEmpty()) {
+        if (drops.isEmpty()) {
             return;
         }
+
+        Player player = event.getEntity();
+        World world = player.getWorld();
+        Location deathLocation = player.getLocation();
+
+        double horizontalSpeed = settings.scatter() * 0.5D;
+        double verticalSpeed = settings.throwHeight() * 0.4D;
+        int pickupDelay = settings.pickupDelay();
 
         List<ItemStack> snapshot = new ArrayList<>(drops);
         drops.clear();
 
-        Player player = event.getEntity();
-        Location deathLocation = player.getLocation();
+        List<ItemStack> failed = new ArrayList<>(0);
 
-        double scatter = config.getScatter() * SCATTER_TO_VELOCITY;
-        double throwHeight = config.getThrowHeight() * THROW_TO_VELOCITY;
-        int pickupDelay = config.getPickupDelay();
-
+        ThreadLocalRandom rng = ThreadLocalRandom.current();
         for (ItemStack stack : snapshot) {
-            if (stack == null || stack.getAmount() <= 0) {
+            if (stack == null || stack.getType().isAir()) {
                 continue;
             }
 
-            Item item = player.getWorld().dropItem(deathLocation, stack);
+            try {
+                Item item = world.dropItem(deathLocation, stack.clone());
+                if (item == null) {
+                    failed.add(stack);
+                    continue;
+                }
 
-            double angle = ThreadLocalRandom.current().nextDouble() * 2.0 * Math.PI;
-            item.setVelocity(new Vector(
-                    Math.cos(angle) * scatter,
-                    throwHeight,
-                    Math.sin(angle) * scatter
-            ));
-            item.setPickupDelay(pickupDelay);
+                item.setPickupDelay(pickupDelay);
+
+                double angle = rng.nextDouble(Math.PI * 2.0D);
+                item.setVelocity(new Vector(
+                        Math.cos(angle) * horizontalSpeed,
+                        verticalSpeed,
+                        Math.sin(angle) * horizontalSpeed
+                ));
+            } catch (RuntimeException ex) {
+                failed.add(stack);
+                logger.log(Level.WARNING,
+                        "Не удалось выбросить " + stack.getType()
+                                + " игрока " + player.getName(),
+                        ex);
+            }
+        }
+
+        if (!failed.isEmpty()) {
+            drops.addAll(failed);
         }
     }
 }
